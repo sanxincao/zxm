@@ -31,6 +31,7 @@ python app.py
 | 分层策略 | `/policies` | 按项目配置 Hot/Warm/Cold 规则 |
 | 用户权限 | `/users` | 创建账号、查看角色与负责项目 |
 | 日志审计 | `/logs` | 登录、文件、同步等操作追踪 |
+| 功能规划 | `/functional_overview` | 需求文档背景、业务目标与模块亮点 |
 
 ## 示例数据
 

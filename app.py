@@ -13,6 +13,119 @@ app.secret_key = os.environ.get("NAS_DEMO_SECRET", "nas-demo-secret")
 db = SQLAlchemy(app)
 
 
+FUNCTIONAL_OVERVIEW = {
+    "background": {
+        "title": "项目背景",
+        "points": [
+            "素材散落在移动硬盘/个人网盘，备份与检索体验差",
+            "硬盘损坏风险高、网盘限速导致传输耗时",
+            "多人协作权限混乱，版本不可控",
+        ],
+    },
+    "goals": {
+        "title": "业务目标",
+        "highlights": [
+            "降低素材丢失风险 (RAID + 云端备份)",
+            "提升日常剪辑与检索效率",
+            "减少手工传盘/上传，配合自动同步策略",
+            "提供基础的多人协作与权限管理",
+        ],
+    },
+    "modules": [
+        {
+            "name": "本地存储与 RAID 管理",
+            "description": "统一纳管物理磁盘、阵列、容量快照",
+            "features": [
+                "磁盘识别、温度与 S.M.A.R.T 健康监测",
+                "RAID1/5/10 创建、状态展示、重建提示",
+                "卷/共享空间容量监控，支持快照 (选配)",
+            ],
+        },
+        {
+            "name": "项目 / 文件管理",
+            "description": "把素材组织成项目结构并提供导入向导",
+            "features": [
+                "项目模板、状态、客户信息、目录初始化",
+                "文件浏览、上传/导入、移动/删除操作",
+                "U 盘/读卡器导入向导与重复检测",
+            ],
+        },
+        {
+            "name": "标签与元数据",
+            "description": "采集媒体信息并支撑业务字段",
+            "features": [
+                "自动记录分辨率、帧率、拍摄时间等技术元数据",
+                "客户、拍摄日期、摄影师、机位、场景等自定义字段",
+                "单个/批量编辑与多标签打标",
+            ],
+        },
+        {
+            "name": "检索与预览",
+            "description": "快速定位素材并查看缩略图/详情",
+            "features": [
+                "关键字全局搜索 (项目/客户/标签/文件名)",
+                "按项目、时间、类型、分辨率、标签筛选",
+                "列表/缩略图视图与常用视图收藏",
+            ],
+        },
+        {
+            "name": "云存储与网盘接入",
+            "description": "统一配置对象存储与网盘账号",
+            "features": [
+                "多对象存储目标 (Endpoint、AK/SK、路径前缀)",
+                "WebDAV、官方 API、扫码授权等接入模式",
+                "存储目标启停、编辑、连接测试",
+            ],
+        },
+        {
+            "name": "同步与分层存储",
+            "description": "智能调度本地/云端同步并控制热温冷策略",
+            "features": [
+                "源路径、方向、过滤器、冲突策略的同步任务定义",
+                "定时/窗口/限速调度、断点续传与差异对比",
+                "Hot/Warm/Cold 策略、冷数据本地缓存与回迁流程",
+            ],
+        },
+        {
+            "name": "用户、角色与权限",
+            "description": "保障协作安全与项目隔离",
+            "features": [
+                "用户生命周期管理与密码重置",
+                "预置角色 (管理员/负责人/成员) 绑定权限",
+                "项目维度的浏览/上传/删除/管理授权",
+            ],
+        },
+        {
+            "name": "运维监控与告警",
+            "description": "确保设备状态透明并及时预警",
+            "features": [
+                "磁盘健康、阵列状态、温度/S.M.A.R.T 展示",
+                "容量阈值告警、任务失败日志、邮件通知",
+                "扩容/迁移向导，网络与云连通性自检",
+            ],
+        },
+        {
+            "name": "系统与配置管理",
+            "description": "提供网络、协议、备份等系统级设置",
+            "features": [
+                "主机名、时区、语言、管理员密码等基础设置",
+                "IP/网关/DNS/SMB/NFS 等网络共享管理",
+                "系统配置/元数据库备份与恢复",
+            ],
+        },
+        {
+            "name": "Web 界面",
+            "description": "面向用户与管理员的操作入口",
+            "features": [
+                "素材浏览、搜索、导入、冷数据恢复",
+                "存储配置、同步任务、告警总览",
+                "多角色自适应的仪表盘",
+            ],
+        },
+    ],
+}
+
+
 # Association tables
 file_tags = db.Table(
     "file_tags",
@@ -496,6 +609,14 @@ def file_detail(file_id):
 
     tags = Tag.query.order_by(Tag.name).all()
     return render_template("file_detail.html", file=file, all_tags=tags)
+
+
+@app.route("/functional_overview")
+def functional_overview():
+    return render_template(
+        "functional_overview.html",
+        overview=FUNCTIONAL_OVERVIEW,
+    )
 
 
 @app.route("/storage/local", methods=["GET", "POST"])
