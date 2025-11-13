@@ -112,6 +112,7 @@ class SyncTask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
+    project = db.relationship("Project", backref="sync_tasks")
     source_path = db.Column(db.String(200))
     direction = db.Column(db.String(20), default="NAS→云端")
     mode = db.Column(db.String(20), default="增量")
