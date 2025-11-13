@@ -1,0 +1,15 @@
+body {
+  background-color: #f5f7fb;
+}
+
+.card {
+  border-radius: 0.75rem;
+}
+
+.badge {
+  font-size: 0.85rem;
+}
+
+table td, table th {
+  vertical-align: middle;
+}

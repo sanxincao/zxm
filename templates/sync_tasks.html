@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>同步与调度</h3>
+  <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#taskForm">创建任务</button>
+</div>
+
+<div class="collapse" id="taskForm">
+  <div class="card card-body mb-4">
+    <form class="row g-3" method="post">
+      <div class="col-md-4">
+        <label class="form-label">任务名称</label>
+        <input class="form-control" name="name" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">所属项目</label>
+        <select class="form-select" name="project_id">
+          {% for project in projects %}
+            <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">源路径</label>
+        <input class="form-control" name="source_path" placeholder="/projects/...">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">同步方向</label>
+        <select class="form-select" name="direction">
+          <option>NAS→云端</option>
+          <option>云端→NAS</option>
+          <option>双向</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">模式</label>
+        <select class="form-select" name="mode">
+          <option>增量</option>
+          <option>全量</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">调度</label>
+        <input class="form-control" name="schedule" placeholder="每日 02:00 / 每周一 03:00">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">高峰限速(Mbps)</label>
+        <input class="form-control" name="bandwidth_high" type="number" value="80">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">低谷限速(Mbps)</label>
+        <input class="form-control" name="bandwidth_low" type="number" value="200">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">冲突策略</label>
+        <select class="form-select" name="conflict_strategy">
+          <option>以本地为准</option>
+          <option>以云端为准</option>
+          <option>保留多版本</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">过滤规则</label>
+        <input class="form-control" name="file_filter" placeholder="*.mov;*.mp4">
+      </div>
+      <div class="col-12">
+        <label class="form-label">目标端</label>
+        <div class="d-flex flex-wrap gap-3">
+          {% for target in targets %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="targets" value="{{ target.id }}" id="target{{ target.id }}">
+              <label class="form-check-label" for="target{{ target.id }}">{{ target.name }}</label>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-success">保存任务</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>任务</th>
+        <th>项目</th>
+        <th>方向</th>
+        <th>模式</th>
+        <th>调度</th>
+        <th>限速</th>
+        <th>目标端</th>
+        <th>状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+        <tr>
+          <td>{{ task.name }}</td>
+          <td>{{ task.project.name if task.project else '-' }}</td>
+          <td>{{ task.direction }}</td>
+          <td>{{ task.mode }}</td>
+          <td>{{ task.schedule }}</td>
+          <td>{{ task.bandwidth_high }}/{{ task.bandwidth_low }} Mbps</td>
+          <td>
+            {% for target in task.targets %}
+              <span class="badge text-bg-secondary">{{ target.name }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            <span class="badge text-bg-info">{{ task.status }}</span><br>
+            <small>上次：{{ task.last_run or '---' }}</small><br>
+            <small>下次：{{ task.next_run or '---' }}</small>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('run_sync', task_id=task.id) }}">
+              <button class="btn btn-sm btn-outline-primary">立即执行</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="text-center text-muted">暂无同步任务</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

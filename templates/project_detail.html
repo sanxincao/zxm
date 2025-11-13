@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3>{{ project.name }}</h3>
+    <p class="text-muted mb-0">客户：{{ project.client_name }} · 状态：{{ project.status }} · 分层：{{ project.project_state }}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('project_list') }}">返回列表</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">项目状态/成员</div>
+      <div class="card-body">
+        <form method="post" class="row g-3">
+          <input type="hidden" name="action" value="update_status">
+          <div class="col-md-6">
+            <label class="form-label">状态</label>
+            <select class="form-select" name="status">
+              {% for st in ['进行中','已完成','归档'] %}
+                <option value="{{ st }}" {% if project.status==st %}selected{% endif %}>{{ st }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">分层</label>
+            <select class="form-select" name="project_state">
+              {% for tier in ['Hot','Warm','Cold'] %}
+                <option value="{{ tier }}" {% if project.project_state==tier %}selected{% endif %}>{{ tier }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-primary">保存</button>
+          </div>
+        </form>
+
+        <hr>
+        <h6>成员</h6>
+        <ul class="list-unstyled">
+          {% for member in project.members %}
+            <li>{{ member.username }}（{{ member.role }}）</li>
+          {% else %}
+            <li class="text-muted">暂无成员</li>
+          {% endfor %}
+        </ul>
+        <form method="post" class="row g-2">
+          <input type="hidden" name="action" value="add_member">
+          <div class="col-8">
+            <select class="form-select" name="user_id">
+              {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}（{{ user.role }}）</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-4">
+            <button class="btn btn-outline-primary w-100">添加成员</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">分层策略</div>
+      <div class="card-body">
+        <form method="post" class="row g-3">
+          <input type="hidden" name="action" value="update_policy">
+          <div class="col-md-6">
+            <label class="form-label">Hot → Warm（天）</label>
+            <input class="form-control" name="hot_days" type="number" value="{{ project.policy.hot_to_warm_days if project.policy else 7 }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Warm → Cold（月）</label>
+            <input class="form-control" name="warm_months" type="number" value="{{ project.policy.warm_to_cold_months if project.policy else 3 }}">
+          </div>
+          <div class="col-md-6 form-check">
+            <input class="form-check-input" type="checkbox" name="keep_warm" id="keep_warm" {% if not project.policy or project.policy.keep_local_warm %}checked{% endif %}>
+            <label class="form-check-label" for="keep_warm">温数据保留本地关键目录</label>
+          </div>
+          <div class="col-md-6 form-check">
+            <input class="form-check-input" type="checkbox" name="keep_cold" id="keep_cold" {% if project.policy and project.policy.keep_local_cold %}checked{% endif %}>
+            <label class="form-check-label" for="keep_cold">冷数据保留本地副本</label>
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-primary">保存策略</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>项目文件</span>
+      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#importForm">导入/登记文件</button>
+    </div>
+    <div class="collapse" id="importForm">
+      <div class="card-body">
+        <form class="row g-3" method="post" action="{{ url_for('add_file', project_id=project.id) }}">
+          <div class="col-md-3">
+            <label class="form-label">目录</label>
+            <input class="form-control" name="folder" value="原始素材">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">文件名</label>
+            <input class="form-control" name="name" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">类型</label>
+            <select class="form-select" name="file_type">
+              <option>视频</option>
+              <option>图片</option>
+              <option>音频</option>
+              <option>工程</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">大小(MB)</label>
+            <input class="form-control" name="size_mb" type="number" value="1024">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">分辨率</label>
+            <input class="form-control" name="resolution" placeholder="4K">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">时长(s)</label>
+            <input class="form-control" name="duration" type="number">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">帧率</label>
+            <input class="form-control" name="frame_rate" placeholder="25">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">编码</label>
+            <input class="form-control" name="codec" placeholder="ProRes">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">机型/机位</label>
+            <input class="form-control" name="camera">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">拍摄地点</label>
+            <input class="form-control" name="location">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">分层</label>
+            <select class="form-select" name="storage_state">
+              <option>Hot</option>
+              <option>Warm</option>
+              <option>Cold</option>
+            </select>
+          </div>
+          <div class="col-md-2 form-check">
+            <input class="form-check-input" type="checkbox" name="local_available" checked id="local_available">
+            <label class="form-check-label" for="local_available">保留本地</label>
+          </div>
+          <div class="col-md-2 form-check">
+            <input class="form-check-input" type="checkbox" name="cloud_synced" id="cloud_synced">
+            <label class="form-check-label" for="cloud_synced">云端同步完成</label>
+          </div>
+          <div class="col-12">
+            <label class="form-label">备注</label>
+            <textarea class="form-control" name="notes"></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-success">登记</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>目录</th>
+              <th>文件名</th>
+              <th>类型</th>
+              <th>大小</th>
+              <th>分层</th>
+              <th>本地</th>
+              <th>云端</th>
+              <th>标签</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for file in files %}
+              <tr>
+                <td>{{ file.folder }}</td>
+                <td><a href="{{ url_for('file_detail', file_id=file.id) }}">{{ file.name }}</a></td>
+                <td>{{ file.file_type }}</td>
+                <td>{{ file.size_mb }} MB</td>
+                <td>{{ file.storage_state }}</td>
+                <td>{{ '是' if file.local_available else '否' }}</td>
+                <td>{{ '已同步' if file.cloud_synced else '待同步' }}</td>
+                <td>
+                  {% for tag in file.tags %}
+                    <span class="badge text-bg-secondary">{{ tag.name }}</span>
+                  {% endfor %}
+                </td>
+                <td>
+                  {% if file.storage_state == 'Cold' and not file.local_available %}
+                    <form method="post" action="{{ url_for('file_detail', file_id=file.id) }}">
+                      <input type="hidden" name="action" value="restore">
+                      <button class="btn btn-sm btn-warning">申请恢复</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="9" class="text-center text-muted">暂无文件</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

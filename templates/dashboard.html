@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">容量概览</h5>
+        <p>总容量：<strong>{{ total_capacity }} GB</strong></p>
+        <p>已使用（阵列统计）：<strong>{{ used_capacity }} GB</strong></p>
+        <div class="progress" role="progressbar">
+          {% set used_percent = (used_capacity / total_capacity * 100) if total_capacity else 0 %}
+          <div class="progress-bar" style="width: {{ used_percent|round(1) }}%">{{ used_percent|round(1) }}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">分层数据数量</h5>
+        <ul class="list-unstyled mb-0">
+          <li>Hot：{{ hot_files }} 个文件</li>
+          <li>Warm：{{ warm_files }} 个文件</li>
+          <li>Cold：{{ cold_files }} 个文件</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">同步任务</h5>
+        {% for task in tasks %}
+          <div class="d-flex justify-content-between border-bottom py-1">
+            <span>{{ task.name }}</span>
+            <span class="badge text-bg-secondary">{{ task.status }}</span>
+          </div>
+        {% else %}
+          <p class="text-muted">暂无任务</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <h4>项目总览</h4>
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>项目</th>
+          <th>客户</th>
+          <th>状态</th>
+          <th>分层</th>
+          <th>最近访问</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects %}
+          <tr>
+            <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+            <td>{{ project.client_name }}</td>
+            <td>{{ project.status }}</td>
+            <td>{{ project.project_state }}</td>
+            <td>{{ project.last_accessed or '---' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-4">
+  <h4>磁盘健康</h4>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>序列号</th>
+          <th>容量(GB)</th>
+          <th>温度</th>
+          <th>S.M.A.R.T</th>
+          <th>健康</th>
+          <th>所属阵列</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for disk in disks %}
+          <tr>
+            <td>{{ disk.serial }}</td>
+            <td>{{ disk.capacity_gb }}</td>
+            <td>{{ disk.temperature }} ℃</td>
+            <td>{{ disk.smart_status }}</td>
+            <td>{{ disk.health }}</td>
+            <td>{{ disk.raid.name if disk.raid else '-' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>项目管理</h3>
+  <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#createProject">新建项目</button>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-3" method="get">
+      <div class="col-md-4">
+        <input class="form-control" name="keyword" placeholder="按名称/客户搜索" value="{{ request.args.get('keyword','') }}">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" name="status">
+          <option value="">所有状态</option>
+          {% for st in ['进行中','已完成','归档'] %}
+            <option value="{{ st }}" {% if request.args.get('status')==st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" name="tier">
+          <option value="">全部分层</option>
+          {% for tier in ['Hot','Warm','Cold'] %}
+            <option value="{{ tier }}" {% if request.args.get('tier')==tier %}selected{% endif %}>{{ tier }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary w-100" type="submit">检索</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="collapse" id="createProject">
+  <div class="card card-body mb-4">
+    <form method="post">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">项目名称</label>
+          <input class="form-control" name="name" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">客户</label>
+          <input class="form-control" name="client">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">状态</label>
+          <select class="form-select" name="status">
+            <option>进行中</option>
+            <option>已完成</option>
+            <option>归档</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">分层</label>
+          <select class="form-select" name="project_state">
+            <option>Hot</option>
+            <option>Warm</option>
+            <option>Cold</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">地点/机房</label>
+          <input class="form-control" name="location">
+        </div>
+        <div class="col-12">
+          <label class="form-label">描述</label>
+          <textarea class="form-control" name="description"></textarea>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <button class="btn btn-primary">提交</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>客户</th>
+        <th>状态</th>
+        <th>分层</th>
+        <th>地点</th>
+        <th>成员数</th>
+        <th>最近访问</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for project in projects %}
+        <tr>
+          <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+          <td>{{ project.client_name }}</td>
+          <td>{{ project.status }}</td>
+          <td><span class="badge text-bg-info">{{ project.project_state }}</span></td>
+          <td>{{ project.location or '-' }}</td>
+          <td>{{ project.members|length }}</td>
+          <td>{{ project.last_accessed or '---' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted">暂无项目</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

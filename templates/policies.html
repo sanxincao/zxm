@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>分层策略中心</h3>
+  <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#policyForm">配置策略</button>
+</div>
+
+<div class="collapse" id="policyForm">
+  <div class="card card-body mb-4">
+    <form class="row g-3" method="post">
+      <div class="col-md-4">
+        <label class="form-label">选择项目</label>
+        <select class="form-select" name="project_id">
+          {% for project in projects %}
+            <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Hot → Warm（天）</label>
+        <input class="form-control" type="number" name="hot_days" value="10">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Warm → Cold（月）</label>
+        <input class="form-control" type="number" name="warm_months" value="3">
+      </div>
+      <div class="col-md-4 form-check">
+        <input class="form-check-input" type="checkbox" name="keep_hot" id="keep_hot" checked>
+        <label class="form-check-label" for="keep_hot">Hot 本地保留全量</label>
+      </div>
+      <div class="col-md-4 form-check">
+        <input class="form-check-input" type="checkbox" name="keep_warm" id="keep_warm" checked>
+        <label class="form-check-label" for="keep_warm">Warm 保留关键目录</label>
+      </div>
+      <div class="col-md-4 form-check">
+        <input class="form-check-input" type="checkbox" name="keep_cold" id="keep_cold">
+        <label class="form-check-label" for="keep_cold">Cold 保留本地副本</label>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-success">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>Hot → Warm</th>
+        <th>Warm → Cold</th>
+        <th>保留策略</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for policy in policies %}
+        <tr>
+          <td>{{ policy.project.name if policy.project else '全局' }}</td>
+          <td>{{ policy.hot_to_warm_days }} 天</td>
+          <td>{{ policy.warm_to_cold_months }} 个月</td>
+          <td>
+            <span class="badge text-bg-primary">Hot:{{ '保留' if policy.keep_local_hot else '清理' }}</span>
+            <span class="badge text-bg-info">Warm:{{ '保留' if policy.keep_local_warm else '清理' }}</span>
+            <span class="badge text-bg-warning">Cold:{{ '保留' if policy.keep_local_cold else '索引' }}</span>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="text-center text-muted">尚未设置策略</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

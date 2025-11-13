@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>云存储与网盘接入</h3>
+  <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#targetForm">新增目标</button>
+</div>
+
+<div class="collapse" id="targetForm">
+  <div class="card card-body mb-4">
+    <form class="row g-3" method="post">
+      <div class="col-md-4">
+        <label class="form-label">名称</label>
+        <input class="form-control" name="name" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">类型</label>
+        <select class="form-select" name="target_type">
+          <option>对象存储</option>
+          <option>网盘(WebDAV)</option>
+          <option>网盘(API)</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">认证方式</label>
+        <select class="form-select" name="auth_mode">
+          <option>AK/SK</option>
+          <option>账号密码</option>
+          <option>扫码登录</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Endpoint / API</label>
+        <input class="form-control" name="endpoint">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Bucket/目录</label>
+        <input class="form-control" name="bucket">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Access Key / Token</label>
+        <input class="form-control" name="access_key">
+      </div>
+      <div class="col-12">
+        <label class="form-label">扫码/额外说明</label>
+        <textarea class="form-control" name="extra" placeholder="若为扫码登录，可在此粘贴授权信息"></textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label">用途描述</label>
+        <textarea class="form-control" name="description"></textarea>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-success">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered align-middle">
+    <thead>
+      <tr>
+        <th>名称</th>
+        <th>类型</th>
+        <th>Endpoint</th>
+        <th>存储桶/目录</th>
+        <th>认证</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for target in targets %}
+        <tr>
+          <td>{{ target.name }}</td>
+          <td>{{ target.target_type }}</td>
+          <td>{{ target.endpoint }}</td>
+          <td>{{ target.bucket }}</td>
+          <td>{{ target.auth_mode }}</td>
+          <td>{{ target.description }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-center text-muted">尚未配置云端目标</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

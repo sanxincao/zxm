@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-3">本地存储与 RAID</h3>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">磁盘列表</div>
+      <div class="card-body">
+        <form class="row g-2" method="post">
+          <input type="hidden" name="type" value="disk">
+          <div class="col-md-4">
+            <input class="form-control" name="serial" placeholder="序列号" required>
+          </div>
+          <div class="col-md-2">
+            <input class="form-control" name="capacity" placeholder="容量GB" type="number" required>
+          </div>
+          <div class="col-md-2">
+            <input class="form-control" name="temperature" placeholder="温度" type="number">
+          </div>
+          <div class="col-md-2">
+            <select class="form-select" name="raid_id">
+              <option value="">所属阵列</option>
+              {% for raid in raids %}
+                <option value="{{ raid.id }}">{{ raid.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100">添加</button>
+          </div>
+        </form>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>序列号</th><th>容量</th><th>温度</th><th>SMART</th><th>状态</th><th>阵列</th></tr>
+            </thead>
+            <tbody>
+              {% for disk in disks %}
+                <tr>
+                  <td>{{ disk.serial }}</td>
+                  <td>{{ disk.capacity_gb }} GB</td>
+                  <td>{{ disk.temperature }} ℃</td>
+                  <td>{{ disk.smart_status }}</td>
+                  <td>{{ disk.health }}</td>
+                  <td>{{ disk.raid.name if disk.raid else '-' }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="6" class="text-center text-muted">暂无磁盘</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">阵列管理</div>
+      <div class="card-body">
+        <form class="row g-2" method="post">
+          <input type="hidden" name="type" value="raid">
+          <div class="col-md-4"><input class="form-control" name="name" placeholder="阵列名称" required></div>
+          <div class="col-md-2">
+            <select class="form-select" name="level">
+              {% for lvl in ['RAID0','RAID1','RAID5','RAID6','RAID10'] %}
+                <option>{{ lvl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2"><input class="form-control" name="capacity_total" placeholder="总容量" type="number" required></div>
+          <div class="col-md-2"><input class="form-control" name="capacity_used" placeholder="已用" type="number" required></div>
+          <div class="col-md-2"><button class="btn btn-outline-primary w-100">创建</button></div>
+          <div class="col-12"><textarea class="form-control" name="notes" placeholder="用途/备注"></textarea></div>
+        </form>
+        <div class="table-responsive mt-3">
+          <table class="table table-striped">
+            <thead><tr><th>阵列</th><th>级别</th><th>状态</th><th>容量</th><th>用途</th></tr></thead>
+            <tbody>
+              {% for raid in raids %}
+                <tr>
+                  <td>{{ raid.name }}</td>
+                  <td>{{ raid.level }}</td>
+                  <td>{{ raid.status }}</td>
+                  <td>{{ raid.capacity_used }}/{{ raid.capacity_total }} GB</td>
+                  <td>{{ raid.notes }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5" class="text-center text-muted">暂无阵列</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
