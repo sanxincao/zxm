@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3>功能规划总览</h3>
+    <p class="text-muted mb-0">根据需求文档梳理的模块与目标，便于快速理解产品范围。</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">{{ overview.background.title }}</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          {% for item in overview.background.points %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">{{ overview.goals.title }}</div>
+      <div class="card-body">
+        <ul class="mb-0">
+          {% for goal in overview.goals.highlights %}
+            <li>{{ goal }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <h4>模块能力</h4>
+  <div class="row g-4">
+    {% for module in overview.modules %}
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">{{ module.name }}</h5>
+            <p class="text-muted">{{ module.description }}</p>
+            <ul class="mb-0">
+              {% for feature in module.features %}
+                <li>{{ feature }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
