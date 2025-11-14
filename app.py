@@ -126,6 +126,296 @@ FUNCTIONAL_OVERVIEW = {
 }
 
 
+PRD_DATA = {
+    "product": {
+        "name": "创作 NAS 混合云存储系统（V1）",
+        "purpose": "为个人摄像师、小型工作室、中小制作团队提供“本地 NAS + 云端存储 + 智能同步”的一体化平台，取代零散硬盘与限速网盘。",
+        "goals": [
+            "80% 素材纳入统一 NAS 管理，减少移动硬盘依赖",
+            "新项目建档 + 素材导入 + 云备份 30 分钟内完成",
+            "热/温/冷策略让本地冷数据占用降低 30%",
+            "支撑 5–10 人协作，权限明确可控",
+        ],
+    },
+    "owners": [
+        {
+            "role": "老板 / 制片人",
+            "focus": ["数据安全可追溯", "总体成本可控", "流程一键可视"],
+        },
+        {
+            "role": "技术 / 设备负责人",
+            "focus": ["扩容简单", "备份可靠", "告警可落地"],
+        },
+        {
+            "role": "摄像师 / 剪辑师",
+            "focus": ["导入快", "访问快", "检索快"],
+        },
+    ],
+    "scenarios": [
+        "拍摄归来快速导入并生成目录",
+        "NAS 作为统一素材盘支撑多机剪辑",
+        "项目完成一键归档到云端对象存储/网盘",
+        "历史项目按标签/客户检索并回迁冷数据",
+        "多人项目的权限隔离和审批",
+        "磁盘健康、容量、扩容指引的日常运维",
+    ],
+    "scope": {
+        "must": [
+            "RAID/卷管理与状态监控",
+            "项目/文件/目录与导入能力",
+            "标签、元数据管理与检索预览",
+            "对象存储、网盘接入与同步任务",
+            "热/温/冷分层策略和冷数据清理",
+            "RBAC 角色与项目级权限",
+            "磁盘/容量告警与运维面板",
+            "Creator/管理端 Web UI",
+        ],
+        "exclude": [
+            "完整 MAM 工作流、审片与版本树",
+            "AI 内容识别与语义检索",
+            "复杂多租户（单台设备服务多个组织）",
+        ],
+    },
+    "processes": [
+        {
+            "name": "项目生命周期",
+            "steps": [
+                "创建项目并填写客户、负责人、云端策略",
+                "导入素材生成目录树并持续写入",
+                "项目完成后触发云归档任务",
+                "按策略降温并释放冷数据",
+            ],
+        },
+        {
+            "name": "导入流程",
+            "steps": [
+                "检测外部设备并发起导入向导",
+                "映射到项目目录并可选重命名规则",
+                "执行复制与重试，完成后解析元数据",
+            ],
+        },
+        {
+            "name": "云同步",
+            "steps": [
+                "配置对象存储或网盘",
+                "定义同步任务（源/目标/策略/限速）",
+                "调度器执行差异比对、分片上传、记录日志",
+            ],
+        },
+        {
+            "name": "冷数据恢复",
+            "steps": [
+                "用户点击 cloud-only 文件",
+                "系统提示恢复并生成任务",
+                "从云端下载、回写 NAS 并更新索引",
+            ],
+        },
+    ],
+    "modules": [
+        {
+            "name": "内容管理域",
+            "capabilities": ["项目管理", "文件/目录操作", "标签与元数据", "检索与预览"],
+        },
+        {
+            "name": "存储与同步域",
+            "capabilities": ["本地存储/RAID", "云接入", "同步任务", "分层策略"],
+        },
+        {
+            "name": "安全与账户域",
+            "capabilities": ["用户/角色", "项目级权限", "操作审计"],
+        },
+        {
+            "name": "运维与系统域",
+            "capabilities": ["监控与告警", "扩容向导", "配置备份"],
+        },
+    ],
+    "metrics": [
+        {"name": "导入效率", "target": "单个项目建档 + 导入 + 备份 ≤ 30 分钟"},
+        {"name": "容量释放", "target": "冷数据本地占用下降 ≥ 30%"},
+        {"name": "协作体验", "target": "5–10 人并发访问无明显卡顿"},
+        {"name": "安全性", "target": "核心操作 100% 有审计记录"},
+    ],
+}
+
+
+DESIGN_DATA = {
+    "components": {
+        "frontend": [
+            {"name": "Web 用户端", "desc": "供 Creator 浏览项目、导入、检索、发起冷数据恢复"},
+            {"name": "Web 管理端", "desc": "供管理员配置存储、同步、策略、用户与告警"},
+        ],
+        "services": [
+            "Auth & RBAC：认证、Token、权限校验",
+            "Project & Asset：项目、目录、导入任务管理",
+            "Metadata & Search：元数据与检索索引",
+            "Sync & Tiering：同步任务、分层策略调度",
+            "Cloud Adapter：S3/OSS/COS/WebDAV/网盘驱动",
+            "Storage & Health：磁盘、RAID、S.M.A.R.T 采集",
+            "Monitoring & Alert：指标、告警与通知",
+            "Audit Log：行为日志归档",
+        ],
+        "storage": [
+            "NAS 卷（POSIX 文件系统）",
+            "关系型数据库（项目/资产/策略/用户）",
+            "搜索引擎或 DB 索引（标签、检索）",
+        ],
+    },
+    "data_models": [
+        {
+            "name": "Project",
+            "fields": [
+                ("name", "项目名称"),
+                ("client_name", "客户"),
+                ("owner_user_id", "负责人"),
+                ("status", "ongoing/completed/archived"),
+                ("default_storage_target_id", "默认云目标"),
+                ("tier_policy_id", "绑定的分层策略"),
+            ],
+        },
+        {
+            "name": "Asset",
+            "fields": [
+                ("project_id", "所属项目"),
+                ("parent_folder_id", "父目录"),
+                ("file_name", "文件名"),
+                ("file_path", "NAS 路径"),
+                ("size", "大小"),
+                ("type", "video/image/audio/other"),
+                ("media_meta", "分辨率/时长/帧率"),
+                ("shoot_date", "拍摄日期"),
+                ("local_presence", "local_only/local+cloud/cloud_only"),
+                ("tier_level", "hot/warm/cold"),
+            ],
+        },
+        {
+            "name": "StorageTarget",
+            "fields": [
+                ("type", "对象存储或网盘"),
+                ("provider", "OSS/COS/S3/XXX 网盘"),
+                ("config", "endpoint/bucket/token"),
+                ("status", "active/inactive"),
+            ],
+        },
+        {
+            "name": "SyncTask",
+            "fields": [
+                ("source_type", "project/folder"),
+                ("source_ids", "支持多项目/目录"),
+                ("target_ids", "可多目标"),
+                ("direction", "local_to_cloud/cloud_to_local/bidirectional"),
+                ("mode", "full/incremental"),
+                ("filter_rules", "类型/大小/前缀"),
+                ("schedule_expr", "cron 或窗口"),
+                ("bandwidth_limit", "上下行限速"),
+            ],
+        },
+        {
+            "name": "TierPolicy",
+            "fields": [
+                ("hot_to_warm_days", "转温阈值"),
+                ("warm_to_cold_days", "转冷阈值"),
+                ("cold_local_cache_limit", "冷数据本地缓存上限"),
+            ],
+        },
+        {
+            "name": "User/Role/Permission",
+            "fields": [
+                ("User", "username/password_hash/email/status"),
+                ("Role", "角色 + 描述"),
+                ("RolePermission", "角色授权的菜单/操作"),
+                ("ProjectMember", "项目维度 owner/editor/viewer"),
+            ],
+        },
+    ],
+    "apis": [
+        {
+            "category": "认证与用户",
+            "endpoints": [
+                {"method": "POST", "path": "/api/auth/login", "desc": "用户名+密码换取 Token"},
+                {"method": "GET", "path": "/api/users", "desc": "用户列表"},
+                {"method": "POST", "path": "/api/users", "desc": "创建用户"},
+                {"method": "PATCH", "path": "/api/users/{id}/disable", "desc": "禁用/启用"},
+            ],
+        },
+        {
+            "category": "项目与素材",
+            "endpoints": [
+                {"method": "GET", "path": "/api/projects", "desc": "条件检索项目"},
+                {"method": "POST", "path": "/api/projects", "desc": "新建项目"},
+                {"method": "PATCH", "path": "/api/projects/{id}", "desc": "更新项目状态/信息"},
+                {"method": "GET", "path": "/api/projects/{id}/tree", "desc": "目录树"},
+                {"method": "POST", "path": "/api/assets/import", "desc": "导入任务入口"},
+                {"method": "POST", "path": "/api/assets/search", "desc": "组合检索"},
+            ],
+        },
+        {
+            "category": "云存储与同步",
+            "endpoints": [
+                {"method": "POST", "path": "/api/storage-targets", "desc": "新增对象存储目标"},
+                {"method": "POST", "path": "/api/netdisk/{provider}/bind", "desc": "扫码/授权"},
+                {"method": "GET", "path": "/api/sync-tasks", "desc": "任务列表"},
+                {"method": "POST", "path": "/api/sync-tasks", "desc": "创建任务"},
+                {"method": "POST", "path": "/api/sync-tasks/{id}/run", "desc": "手动执行"},
+            ],
+        },
+        {
+            "category": "策略与运维",
+            "endpoints": [
+                {"method": "GET", "path": "/api/tier-policies", "desc": "策略列表"},
+                {"method": "PATCH", "path": "/api/projects/{id}/tier-policy", "desc": "绑定策略"},
+                {"method": "GET", "path": "/api/dashboard/overview", "desc": "容量、健康、任务"},
+                {"method": "GET", "path": "/api/alerts", "desc": "告警列表"},
+            ],
+        },
+    ],
+    "flows": [
+        {
+            "title": "导入任务",
+            "steps": [
+                "前端发起 /api/assets/import，记录导入任务",
+                "Worker 扫描来源并复制到 NAS",
+                "每完成一个文件即写入 Asset 表并异步解析媒体信息",
+                "前端轮询任务状态并刷新目录",
+            ],
+        },
+        {
+            "title": "同步任务调度",
+            "steps": [
+                "调度器按 cron 拉取到期 SyncTask",
+                "差异比对生成文件列表并拆分子 Job",
+                "调用 Cloud Adapter 分片上传并记录日志",
+                "更新 SyncRecord、Asset.local_presence 并处理失败重试",
+            ],
+        },
+        {
+            "title": "分层迁移",
+            "steps": [
+                "定时扫描 Asset.last_accessed 与策略阈值",
+                "热→温/温→冷时更新 tier_level 与 local_presence",
+                "需要释放冷数据时生成删除任务并仅保留索引、缩略图",
+                "用户访问 cloud-only 文件会触发恢复任务，从云端拉回",
+            ],
+        },
+        {
+            "title": "权限校验",
+            "steps": [
+                "前端携带 Token 调用 API",
+                "Auth 服务解析 user_id 并校验有效期",
+                "结合 ProjectMember/RolePermission 判断是否可操作",
+                "审计日志记录动作与结果",
+            ],
+        },
+    ],
+    "security": [
+        "采用 HTTPS + JWT/Session Token，密码加盐哈希存储",
+        "云端 AK/SK、网盘 Token 加密存放，访问时临时解密",
+        "Cloud Adapter 按驱动扩展，新增 provider 无需改核心逻辑",
+        "导入/同步任务可横向扩展 Worker，避免阻塞主线程",
+        "关键操作写入 AuditLog 并可导出以满足合规",
+    ],
+}
+
+
 # Association tables
 file_tags = db.Table(
     "file_tags",
@@ -697,6 +987,16 @@ def functional_overview():
         "functional_overview.html",
         overview=FUNCTIONAL_OVERVIEW,
     )
+
+
+@app.route("/prd")
+def prd_view():
+    return render_template("prd.html", prd=PRD_DATA)
+
+
+@app.route("/design")
+def design_view():
+    return render_template("design_overview.html", design=DESIGN_DATA)
 
 
 @app.route("/storage/local", methods=["GET", "POST"])

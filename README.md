@@ -31,7 +31,9 @@ python app.py
 | 分层策略 | `/policies` | 按项目配置 Hot/Warm/Cold 规则 |
 | 用户权限 | `/users` | 创建账号、查看角色与负责项目 |
 | 日志审计 | `/logs` | 登录、文件、同步等操作追踪 |
-| 功能规划 | `/functional_overview` | 需求文档背景、业务目标与模块亮点 |
+| 功能规划 | `/functional_overview` | 需求背景、业务目标与模块亮点速览 |
+| 正式 PRD | `/prd` | 面向 PM/业务的项目概述、范围、场景与指标 |
+| 概要设计 | `/design` | 模块拆分、核心数据模型、接口与流程 |
 
 ## 示例数据
 

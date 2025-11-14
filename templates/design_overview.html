@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap mb-4">
+  <div class="me-4">
+    <p class="text-uppercase text-primary small mb-1">概要设计</p>
+    <h3 class="mb-2">系统架构与落地要点</h3>
+    <p class="text-muted mb-0">模块划分、数据结构、接口与流程全景，支撑研发立项。</p>
+  </div>
+  <div>
+    <span class="badge text-bg-info">可扩展 · 可运维 · 可审计</span>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">组件划分</div>
+  <div class="card-body">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <h6 class="text-uppercase text-muted small">前端层</h6>
+        <ul class="mb-0">
+          {% for item in design.components.frontend %}
+            <li class="mb-2"><span class="fw-semibold">{{ item.name }}</span> · {{ item.desc }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-uppercase text-muted small">应用服务层</h6>
+        <ul class="mb-0">
+          {% for svc in design.components.services %}
+            <li class="mb-1">{{ svc }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-uppercase text-muted small">存储层</h6>
+        <ul class="mb-0">
+          {% for item in design.components.storage %}
+            <li class="mb-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">核心数据模型</div>
+  <div class="card-body">
+    <div class="accordion" id="modelAccordion">
+      {% for model in design.data_models %}
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="heading{{ loop.index }}">
+            <button class="accordion-button {{ 'collapsed' if not loop.first }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+              {{ model.name }}
+            </button>
+          </h2>
+          <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {{ 'show' if loop.first }}" data-bs-parent="#modelAccordion">
+            <div class="accordion-body">
+              <ul class="mb-0">
+                {% for field, desc in model.fields %}
+                  <li><code>{{ field }}</code> — {{ desc }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">接口概览</div>
+  <div class="card-body">
+    <div class="row g-4">
+      {% for group in design.apis %}
+        <div class="col-md-6">
+          <div class="border rounded h-100 p-3">
+            <h6 class="mb-3">{{ group.category }}</h6>
+            <ul class="list-unstyled mb-0">
+              {% for ep in group.endpoints %}
+                <li class="mb-2">
+                  <span class="badge text-bg-secondary me-2">{{ ep.method }}</span>
+                  <code>{{ ep.path }}</code>
+                  <div class="text-muted small">{{ ep.desc }}</div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">关键流程</div>
+  <div class="card-body">
+    <div class="row g-4">
+      {% for flow in design.flows %}
+        <div class="col-md-6">
+          <div class="p-3 border rounded h-100">
+            <h6 class="fw-semibold">{{ flow.title }}</h6>
+            <ol class="mb-0 ps-3">
+              {% for step in flow.steps %}
+                <li class="mb-1">{{ step }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">安全与扩展</div>
+  <div class="card-body">
+    <ul class="mb-0">
+      {% for item in design.security %}
+        <li class="mb-2">{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
