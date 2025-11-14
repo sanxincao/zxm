@@ -435,12 +435,81 @@ def dashboard():
     files = FileAsset.query.all()
     disks = Disk.query.all()
     tasks = SyncTask.query.all()
+    raids = RaidArray.query.all()
+    targets = StorageTarget.query.all()
+    recent_logs = LogEntry.query.order_by(LogEntry.timestamp.desc()).limit(6).all()
 
     total_capacity = sum(d.capacity_gb for d in disks)
-    used_capacity = sum(r.capacity_used or 0 for r in RaidArray.query.all())
+    used_capacity = sum(r.capacity_used or 0 for r in raids)
+    used_percent = (used_capacity / total_capacity * 100) if total_capacity else 0
     hot_files = len([f for f in files if f.storage_state == "Hot"])
     warm_files = len([f for f in files if f.storage_state == "Warm"])
     cold_files = len([f for f in files if f.storage_state == "Cold"])
+    tier_labels = ["Hot", "Warm", "Cold"]
+    tier_values = [hot_files, warm_files, cold_files]
+    tier_colors = ["#22d3ee", "#818cf8", "#f472b6"]
+    tier_breakdown = {
+        "labels": tier_labels,
+        "values": tier_values,
+        "colors": tier_colors,
+        "pairs": list(zip(tier_labels, tier_values, tier_colors)),
+    }
+
+    healthy_disks = len([d for d in disks if (d.health or "").lower().startswith("healthy")])
+    unsynced_files = len([f for f in files if not f.cloud_synced])
+    running_tasks = len([t for t in tasks if t.status in ("运行中", "同步中")])
+    scheduled_tasks = len(tasks) - running_tasks
+    active_projects = len([p for p in projects if p.status == "进行中"])
+    tag_count = Tag.query.count()
+    policy_projects = StoragePolicy.query.count()
+
+    alerts = []
+    if used_percent > 85:
+        alerts.append(f"阵列容量已使用 {used_percent:.1f}% ，请评估扩容或冷迁策略")
+    hot_disks = [disk for disk in disks if disk.temperature and disk.temperature > 50]
+    if hot_disks:
+        disks_label = "、".join(d.serial for d in hot_disks[:3])
+        alerts.append(f"{disks_label} 温度偏高，请检查风道（共 {len(hot_disks)} 块）")
+    if unsynced_files:
+        alerts.append(f"有 {unsynced_files} 个文件尚未云端同步")
+
+    next_run_times = [task.next_run for task in tasks if task.next_run]
+    next_run_str = min(next_run_times).strftime("%m-%d %H:%M") if next_run_times else "未排程"
+
+    target_names = ", ".join(t.name for t in targets[:2])
+    if len(targets) > 2:
+        target_names += f" 等 {len(targets)} 个"
+
+    service_status = [
+        {
+            "name": "NAS 控制器",
+            "status": "ONLINE",
+            "status_level": "success",
+            "description": f"{healthy_disks}/{len(disks)} 块磁盘健康 · {len(raids)} 套阵列",
+            "kpi": f"容量利用率 {used_percent:.1f}%",
+        },
+        {
+            "name": "同步编排",
+            "status": "SCHEDULED" if tasks else "IDLE",
+            "status_level": "info" if tasks else "warning",
+            "description": f"{len(tasks)} 个任务 / {running_tasks} 正在运行",
+            "kpi": f"下一窗口 {next_run_str}",
+        },
+        {
+            "name": "云接入",
+            "status": "READY" if targets else "未配置",
+            "status_level": "success" if targets else "warning",
+            "description": f"{len(targets)} 个对象存储/网盘目标",
+            "kpi": target_names or "尚未添加外部目标",
+        },
+        {
+            "name": "资产索引",
+            "status": "ACTIVE",
+            "status_level": "success",
+            "description": f"{len(files)} 个文件 · {tag_count} 个标签",
+            "kpi": f"策略覆盖 {policy_projects} 个项目",
+        },
+    ]
 
     return render_template(
         "dashboard.html",
@@ -453,6 +522,17 @@ def dashboard():
         hot_files=hot_files,
         warm_files=warm_files,
         cold_files=cold_files,
+        tier_breakdown=tier_breakdown,
+        service_status=service_status,
+        alerts=alerts,
+        recent_logs=recent_logs,
+        used_percent=used_percent,
+        active_projects=active_projects,
+        running_tasks=running_tasks,
+        scheduled_tasks=scheduled_tasks,
+        unsynced_files=unsynced_files,
+        healthy_disks=healthy_disks,
+        targets=targets,
     )
 
 

@@ -1,103 +1,298 @@
 {% extends 'base.html' %}
 {% block content %}
+<section class="hero-panel glass-card mb-4">
+  <div class="hero-text">
+    <div class="live-pill">
+      <span class="pulse-dot"></span>
+      实时运行 · {{ projects|length }} 个项目托管
+    </div>
+    <h1 class="hero-title">创作 NAS 指挥舱</h1>
+    <p class="hero-subtitle">统一掌控本地阵列、云端目标与同步策略，随时洞察容量、性能与团队协作状态。</p>
+    <div class="hero-metric-grid">
+      <div class="hero-metric">
+        <p>活跃项目</p>
+        <strong>{{ active_projects }}</strong>
+      </div>
+      <div class="hero-metric">
+        <p>文件资产</p>
+        <strong>{{ files|length }}</strong>
+      </div>
+      <div class="hero-metric">
+        <p>运行任务</p>
+        <strong>{{ running_tasks }}</strong>
+      </div>
+      <div class="hero-metric">
+        <p>云端目标</p>
+        <strong>{{ targets|length }}</strong>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('project_list') }}">
+        <i class="bi bi-lightning-charge me-1"></i>
+        进入项目工作区
+      </a>
+      <a class="btn btn-outline-light" href="{{ url_for('sync_tasks') }}">
+        <i class="bi bi-arrow-repeat me-1"></i>
+        配置同步编排
+      </a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="holo-card tier-card">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="section-label">热温冷分布</span>
+        <span class="text-muted small">{{ files|length }} 个文件</span>
+      </div>
+      <canvas id="tierChart" height="160"></canvas>
+      <div class="tier-legend mt-3">
+        {% for label, value, color in tier_breakdown.pairs %}
+          <div class="legend-item">
+            <span class="legend-dot" style="background: {{ color }}"></span>
+            <span>{{ label }}</span>
+            <span class="value">{{ value }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
 <div class="row g-4">
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">容量概览</h5>
-        <p>总容量：<strong>{{ total_capacity }} GB</strong></p>
-        <p>已使用（阵列统计）：<strong>{{ used_capacity }} GB</strong></p>
-        <div class="progress" role="progressbar">
-          {% set used_percent = (used_capacity / total_capacity * 100) if total_capacity else 0 %}
-          <div class="progress-bar" style="width: {{ used_percent|round(1) }}%">{{ used_percent|round(1) }}%</div>
-        </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="holo-card metric-card">
+      <p class="metric-label">容量概览</p>
+      <div class="metric-value">{{ total_capacity }} <span>GB</span></div>
+      <div class="progress compact" role="progressbar">
+        <div class="progress-bar" style="width: {{ used_percent|round(1) }}%"></div>
+      </div>
+      <p class="metric-change">已用 {{ used_capacity }} GB · {{ used_percent|round(1) }}%</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="holo-card metric-card">
+      <p class="metric-label">同步任务</p>
+      <div class="metric-value">{{ tasks|length }} <span>条</span></div>
+      <p class="metric-change">运行中 {{ running_tasks }} · 排队 {{ scheduled_tasks }}</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="holo-card metric-card">
+      <p class="metric-label">云端同步</p>
+      <div class="metric-value">{{ unsynced_files }} <span>个待同步</span></div>
+      <p class="metric-change">Hot {{ hot_files }} · Warm {{ warm_files }} · Cold {{ cold_files }}</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="holo-card metric-card">
+      <p class="metric-label">磁盘健康</p>
+      <div class="metric-value">{{ healthy_disks }} / {{ disks|length }}</div>
+      <p class="metric-change">实时监控温度、SMART 状态</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-xl-4">
+    <div class="glass-card h-100">
+      <div class="section-header">
+        <h5 class="section-title">核心服务状态</h5>
+        <span class="section-subtitle">组件健康实时刷新</span>
+      </div>
+      <div class="service-stack">
+        {% for service in service_status %}
+          <div class="service-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="service-name">{{ service.name }}</p>
+                <p class="service-desc">{{ service.description }}</p>
+              </div>
+              <span class="badge-status badge-{{ service.status_level }}">{{ service.status }}</span>
+            </div>
+            <div class="service-kpi">{{ service.kpi }}</div>
+          </div>
+        {% endfor %}
       </div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">分层数据数量</h5>
-        <ul class="list-unstyled mb-0">
-          <li>Hot：{{ hot_files }} 个文件</li>
-          <li>Warm：{{ warm_files }} 个文件</li>
-          <li>Cold：{{ cold_files }} 个文件</li>
-        </ul>
+  <div class="col-xl-4">
+    <div class="glass-card alert-panel mb-4 mb-xl-4">
+      <div class="section-header">
+        <h5 class="section-title">健康提醒</h5>
+        <span class="section-subtitle">自动诊断阵列与同步风险</span>
       </div>
+      <ul class="alert-list">
+        {% for alert in alerts %}
+          <li class="alert-item">
+            <span class="badge-status badge-warning">ALERT</span>
+            {{ alert }}
+          </li>
+        {% else %}
+          <li class="text-muted">暂无告警，系统运行稳定。</li>
+        {% endfor %}
+      </ul>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">同步任务</h5>
+    <div class="glass-card">
+      <div class="section-header">
+        <h5 class="section-title">同步任务面板</h5>
+        <a class="section-link" href="{{ url_for('sync_tasks') }}">全部任务</a>
+      </div>
+      <div class="task-board">
         {% for task in tasks %}
-          <div class="d-flex justify-content-between border-bottom py-1">
-            <span>{{ task.name }}</span>
-            <span class="badge text-bg-secondary">{{ task.status }}</span>
+          <div class="task-card">
+            <div>
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">{{ task.project.name if task.project else '独立任务' }} · {{ task.direction }}</p>
+            </div>
+            <div class="text-end">
+              <span class="badge-status badge-info">{{ task.status }}</span>
+              <p class="task-meta">下一次 {{ task.next_run.strftime('%m-%d %H:%M') if task.next_run else '待调度' }}</p>
+            </div>
           </div>
         {% else %}
-          <p class="text-muted">暂无任务</p>
+          <p class="text-muted">暂未创建同步任务。</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="glass-card h-100">
+      <div class="section-header">
+        <h5 class="section-title">实时活动</h5>
+        <span class="section-subtitle">日志审计最近 6 条</span>
+      </div>
+      <div class="timeline">
+        {% for log in recent_logs %}
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <p class="timeline-title">{{ log.category }} · {{ log.action }}</p>
+              <p class="timeline-meta">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }} · {{ log.username }}</p>
+              <p class="timeline-desc">{{ log.detail }}</p>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-muted">暂无日志记录。</p>
         {% endfor %}
       </div>
     </div>
   </div>
 </div>
 
-<div class="mt-4">
-  <h4>项目总览</h4>
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <thead>
-        <tr>
-          <th>项目</th>
-          <th>客户</th>
-          <th>状态</th>
-          <th>分层</th>
-          <th>最近访问</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for project in projects %}
-          <tr>
-            <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
-            <td>{{ project.client_name }}</td>
-            <td>{{ project.status }}</td>
-            <td>{{ project.project_state }}</td>
-            <td>{{ project.last_accessed or '---' }}</td>
-          </tr>
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="glass-card">
+      <div class="section-header">
+        <h5 class="section-title">项目总览</h5>
+        <span class="section-subtitle">按访问时间排序</span>
+      </div>
+      <div class="table-responsive glass-table">
+        <table class="table table-dark table-hover align-middle">
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>客户</th>
+              <th>状态</th>
+              <th>分层</th>
+              <th>最近访问</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for project in projects %}
+              <tr>
+                <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+                <td>{{ project.client_name }}</td>
+                <td>{{ project.status }}</td>
+                <td><span class="badge-status badge-info">{{ project.project_state }}</span></td>
+                <td>{{ project.last_accessed.strftime('%Y-%m-%d %H:%M') if project.last_accessed else '---' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center text-muted">暂无项目</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="glass-card mb-4">
+      <div class="section-header">
+        <h5 class="section-title">磁盘健康</h5>
+        <span class="section-subtitle">温度、SMART、阵列</span>
+      </div>
+      <div class="table-responsive glass-table">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>序列号</th>
+              <th>容量</th>
+              <th>温度</th>
+              <th>SMART</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for disk in disks %}
+              <tr>
+                <td>{{ disk.serial }}</td>
+                <td>{{ disk.capacity_gb }} GB</td>
+                <td>{{ disk.temperature }} ℃</td>
+                <td>{{ disk.smart_status }}</td>
+                <td>{{ disk.health }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center text-muted">暂无磁盘</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="glass-card">
+      <div class="section-header">
+        <h5 class="section-title">云接入目标</h5>
+        <span class="section-subtitle">对象存储 / 网盘</span>
+      </div>
+      <ul class="cloud-target-list">
+        {% for target in targets %}
+          <li>
+            <div>
+              <p class="target-name">{{ target.name }}</p>
+              <p class="target-meta">{{ target.target_type }}</p>
+            </div>
+            <p class="target-endpoint">{{ target.endpoint or target.bucket }}</p>
+          </li>
+        {% else %}
+          <li class="text-muted">尚未配置云端目标。</li>
         {% endfor %}
-      </tbody>
-    </table>
+      </ul>
+    </div>
   </div>
 </div>
+{% endblock %}
 
-<div class="mt-4">
-  <h4>磁盘健康</h4>
-  <div class="table-responsive">
-    <table class="table table-sm">
-      <thead>
-        <tr>
-          <th>序列号</th>
-          <th>容量(GB)</th>
-          <th>温度</th>
-          <th>S.M.A.R.T</th>
-          <th>健康</th>
-          <th>所属阵列</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for disk in disks %}
-          <tr>
-            <td>{{ disk.serial }}</td>
-            <td>{{ disk.capacity_gb }}</td>
-            <td>{{ disk.temperature }} ℃</td>
-            <td>{{ disk.smart_status }}</td>
-            <td>{{ disk.health }}</td>
-            <td>{{ disk.raid.name if disk.raid else '-' }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const tierConfig = {{ tier_breakdown | tojson }};
+  const ctx = document.getElementById('tierChart');
+  if (ctx && tierConfig) {
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: tierConfig.labels,
+        datasets: [{
+          data: tierConfig.values,
+          backgroundColor: tierConfig.colors,
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+</script>
 {% endblock %}
